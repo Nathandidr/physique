@@ -1,0 +1,330 @@
+test <a href="x">é ${y} `z`
+  indent
+fin<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animations de physique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@500;700&family=Red+Hat+Text:wght@400;500&family=Red+Hat+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* VOICE: carnet de TP clair et précis, pour réviser en prépa
+   IDEA: une paillasse de labo, chaque animation est une manip montée sur la table
+   PICTURE: le moteur lui-même en mouvement, synchronisé avec son diagramme de Clapeyron
+   COLOUR and TYPE: bandeau bleu nuit, chaud corail et froid bleu comme seuls codes couleur ; Red Hat Display + Text
+   LAYOUT: bandeau titre + index des manips, puis une section par animation (dessin, phases, à retenir) */
+:root{color-scheme:light dark;
+--bg:light-dark(#f4f5f8,#070f26);--panel:light-dark(#ffffff,#0f1b3d);--ink:light-dark(#141a2b,#e8ecf6);--mute:light-dark(#545c72,#9aa4bf);
+--line:light-dark(#d9dde7,#26335a);--band:#0b1f4b;--hot:#d85a30;--hotl:light-dark(#f5c4b3,#7a3a22);--cold:#378add;--coldl:light-dark(#b5d4f4,#1e4f80);
+--metal:light-dark(#6b7287,#8c95ad);--regen:light-dark(#d3d1c7,#4a4a46);--acc:#e0115f;--accbg:light-dark(#fde6ee,#3a0f22)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Red Hat Text",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Red Hat Display",system-ui,sans-serif;line-height:1.08;text-wrap:balance;margin:0}
+.top{background:var(--band);color:#fff;padding:clamp(24px,4vw,44px) max(5vw,16px) 20px}
+.top h1{font-size:clamp(30px,5vw,46px);font-weight:700}
+.top p{margin:8px 0 18px;color:#c3cbe3;max-width:60ch}
+.idx{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.idx a{flex:none;color:#fff;text-decoration:none;border:1px solid #3b4f86;border-radius:999px;padding:8px 14px;font-size:14px}
+.idx a.on{background:#fff;color:var(--band);border-color:#fff}
+.idx a:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.anim{padding:clamp(24px,4vw,48px) max(5vw,16px);max-width:1240px;margin:0 auto}
+.tag{display:inline-block;font-size:13px;color:var(--acc);background:var(--accbg);border-radius:6px;padding:3px 9px;margin-bottom:10px}
+.anim h2{font-size:clamp(26px,3.6vw,36px);font-weight:700;margin-bottom:6px}
+.lead{color:var(--mute);margin:0 0 20px;max-width:70ch}
+.bench{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:clamp(14px,2.5vw,28px)}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px;align-items:center}
+.figs svg{width:100%;height:auto;display:block;margin:0 auto}
+.figs .eng{max-width:380px}.figs .pv{max-width:440px}
+svg text{font-family:"Red Hat Text",sans-serif}
+.phases{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 10px}
+.ph{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);color:var(--mute)}
+.ph.on{background:var(--accbg);color:var(--acc);border-color:var(--acc)}
+.desc{margin:0 0 4px;min-height:52px;max-width:75ch}
+.vals{margin:0 0 14px;color:var(--mute);font:13px "Red Hat Mono",monospace;white-space:pre}
+.ctrl{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+button{font:500 15px "Red Hat Text",sans-serif;min-height:44px;min-width:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--acc);height:44px}
+label{font-size:14px;color:var(--mute)}
+.keep{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.keep div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.keep h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.keep p{margin:0;color:var(--mute);font-size:15px}
+.anim+.anim{border-top:1px solid var(--line)}
+.fig3d{position:relative;height:clamp(300px,52vw,470px);touch-action:pan-y;cursor:grab;margin-bottom:16px;user-select:none}
+.fig3d:active{cursor:grabbing}
+.fig3d canvas{position:absolute;inset:0;width:100%;height:100%}
+.hint{position:absolute;right:8px;bottom:6px;font-size:13px;color:var(--mute);pointer-events:none}
+.proj{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:18px;margin-bottom:14px}
+.proj figure{margin:0}.proj svg{width:100%;height:auto;display:block;max-width:480px;margin:0 auto}
+.proj figcaption{font-size:13px;color:var(--mute);text-align:center;margin-top:4px}
+.lab{fill:var(--ink);paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round}
+.rd{font:13px "Red Hat Mono",monospace;color:var(--mute);min-width:12ch}
+.ctrl+.ctrl{margin-top:6px}
+.note{font-size:13px;color:var(--mute);margin:16px 0 0;max-width:75ch}
+footer{padding:20px max(5vw,16px) 36px;color:var(--mute);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<header class="top">
+<h1>Animations de physique</h1>
+<p>Les manips animées construites en révisant. Chaque animation tourne en direct : mets en pause pour étudier un instant précis.</p>
+<nav class="idx" aria-label="Animations">
+<a href="#stirling-alpha" class="on">Moteur Stirling alpha</a>
+<a href="#surface-pvt">Surface P-v-T</a>
+</nav>
+</header>
+
+<main>
+<section class="anim" id="stirling-alpha">
+<span class="tag">Thermodynamique · machines thermiques</span>
+<h2>Moteur Stirling alpha : bielles, vilebrequin et cycle</h2>
+<p class="lead">Deux pistons, l'un dans un cylindre chauffé et l'autre dans un cylindre refroidi, sont reliés par un régénérateur et entraînés par le même vilebrequin avec un décalage de 90°. Le diagramme de Clapeyron est calculé à partir de la position réelle des pistons (modèle de Schmidt, T₂ = 600 K, T₁ = 300 K).</p>
+<div class="bench">
+<div class="figs">
+<svg class="eng" viewBox="0 0 360 400" role="img" aria-label="Moteur Stirling alpha en mouvement">
+<text x="180" y="11" text-anchor="middle" font-size="11" fill="var(--mute)">régénérateur</text>
+<rect x="101" y="22" width="79" height="16" fill="var(--hotl)"/>
+<rect x="180" y="22" width="79" height="16" fill="var(--coldl)"/>
+<rect x="101" y="22" width="18" height="30" fill="var(--hotl)"/>
+<rect x="241" y="22" width="18" height="30" fill="var(--coldl)"/>
+<rect x="158" y="16" width="44" height="28" rx="2" fill="var(--regen)" stroke="var(--metal)"/>
+<g stroke="var(--metal)"><line x1="164" y1="16" x2="164" y2="44"/><line x1="172" y1="16" x2="172" y2="44"/><line x1="180" y1="16" x2="180" y2="44"/><line x1="188" y1="16" x2="188" y2="44"/><line x1="196" y1="16" x2="196" y2="44"/></g>
+<g id="flow"></g>
+<path d="M101 22 H158 M202 22 H259 M101 38 V52 M119 38 V50 M241 38 V50 M259 38 V52 M119 38 H158 M202 38 H241 M101 22 V38 M259 22 V38" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+<rect id="gasH" x="77" y="50" width="66" height="80" fill="var(--hotl)"/>
+<rect id="gasC" x="217" y="50" width="66" height="80" fill="var(--coldl)"/>
+<rect x="62" y="56" width="11" height="70" rx="2" fill="var(--hot)"/>
+<rect x="147" y="56" width="11" height="70" rx="2" fill="var(--hot)"/>
+<g fill="var(--cold)"><rect x="200" y="58" width="13" height="5" rx="1"/><rect x="200" y="72" width="13" height="5" rx="1"/><rect x="200" y="86" width="13" height="5" rx="1"/><rect x="200" y="100" width="13" height="5" rx="1"/><rect x="200" y="114" width="13" height="5" rx="1"/><rect x="287" y="58" width="13" height="5" rx="1"/><rect x="287" y="72" width="13" height="5" rx="1"/><rect x="287" y="86" width="13" height="5" rx="1"/><rect x="287" y="100" width="13" height="5" rx="1"/><rect x="287" y="114" width="13" height="5" rx="1"/></g>
+<path d="M75 238 V50 H101 M119 50 H145 V238 M215 238 V50 H241 M259 50 H285 V238" fill="none" stroke="var(--ink)" stroke-width="3"/>
+<rect id="pisH" x="77" y="130" width="66" height="24" rx="2" fill="var(--metal)"/>
+<rect id="pisC" x="217" y="130" width="66" height="24" rx="2" fill="var(--metal)"/>
+<text x="110" y="256" text-anchor="middle" font-size="12" fill="var(--hot)">côté chaud T₂</text>
+<text x="250" y="256" text-anchor="middle" font-size="12" fill="var(--cold)">côté froid T₁</text>
+<circle cx="180" cy="330" r="50" fill="none" stroke="var(--line)" stroke-width="6"/>
+<g id="spokes" stroke="var(--line)" stroke-width="3"><line/><line/><line/></g>
+<circle cx="180" cy="330" r="5" fill="var(--ink)"/>
+<line id="armH" x1="180" y1="330" x2="180" y2="330" stroke="var(--hot)" stroke-width="4"/>
+<line id="armC" x1="180" y1="330" x2="180" y2="330" stroke="var(--cold)" stroke-width="4"/>
+<line id="rodH" stroke="var(--ink)" stroke-width="3"/>
+<line id="rodC" stroke="var(--ink)" stroke-width="3"/>
+<circle id="pinH" r="4" fill="var(--hot)"/><circle id="pinC" r="4" fill="var(--cold)"/>
+<circle id="ppH" r="3.5" fill="var(--ink)"/><circle id="ppC" r="3.5" fill="var(--ink)"/>
+<text x="242" y="392" font-size="11" fill="var(--mute)">volant + vilebrequin</text>
+</svg>
+<svg class="pv" viewBox="0 0 300 250" role="img" aria-label="Diagramme de Clapeyron du cycle réel, parcouru dans le sens horaire">
+<line x1="40" y1="215" x2="292" y2="215" stroke="var(--mute)"/>
+<line x1="40" y1="215" x2="40" y2="12" stroke="var(--mute)"/>
+<text x="290" y="234" text-anchor="end" font-size="12" fill="var(--mute)">V total</text>
+<text x="32" y="20" text-anchor="end" font-size="12" fill="var(--mute)">P</text>
+<path id="cyc" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+<g id="arr" fill="var(--ink)"></g>
+<circle id="dot" r="6" fill="var(--hot)" stroke="var(--panel)" stroke-width="2"/>
+</svg>
+</div>
+<div class="phases">
+<span class="ph" data-k="0">≈ 1. chauffage isochore</span><span class="ph" data-k="1">≈ 2. détente</span><span class="ph" data-k="2">≈ 3. refroidissement isochore</span><span class="ph" data-k="3">≈ 4. compression</span>
+</div>
+<p class="desc" id="desc">Le gaz est chassé du cylindre froid vers le cylindre chaud.</p>
+<p class="vals" id="vals"> </p>
+<div class="ctrl">
+<button id="play" aria-label="Pause">Pause</button>
+<label for="spd">Vitesse</label>
+<input type="range" id="spd" min="0.05" max="1" step="0.05" value="0.25">
+</div>
+</div>
+<div class="keep">
+<div><h3>Le décalage de 90°</h3><p>Les pistons ne bougent pas en même temps. Le gaz passe donc alternativement côté chaud et côté froid, sans qu'aucune « pression seuil » intervienne.</p></div>
+<div><h3>Le volant d'inertie</h3><p>Il stocke le travail gagné pendant la détente, à haute pression, et le rend pour la compression, à basse pression, qui coûte moins.</p></div>
+<div><h3>Isotherme ≠ adiabatique</h3><p>Pendant la détente à T₂, la source chaude fournit Q = −W > 0. C'est ce qui empêche le gaz de se refroidir.</p></div>
+<div><h3>Cycle réel et cycle idéal</h3><p>Les étapes se chevauchent et le cycle est arrondi. Il reste parcouru dans le sens horaire : W = −∮P dV &lt; 0, c'est bien un moteur.</p></div>
+</div>
+</section>
+<section class="anim" id="surface-pvt">
+<span class="tag">Thermodynamique · changements d'état</span>
+<h2>Surface P-v-T d'un corps pur et ses deux projections</h2>
+<p class="lead">Chaque point de la surface est un état d'équilibre (P, v, T). Les zones diphasées sont des surfaces réglées : à T fixée, la pression est fixée, donc l'isotherme y est un segment horizontal. Vue le long de l'axe T, la surface donne le diagramme de Clapeyron (P, v) ; vue le long de l'axe v, elle donne le diagramme (P, T), où chaque zone diphasée s'écrase en une courbe. Fais tourner la surface et déplace l'isotherme.</p>
+<div class="bench">
+<div class="fig3d" id="pvtWrap"><canvas id="pvt3d" role="img" aria-label="Surface P-v-T en trois dimensions, orientable"></canvas><span class="hint">Glisse pour faire tourner</span></div>
+<div class="proj">
+<figure><svg id="pvtPV" viewBox="0 0 320 240" role="img" aria-label="Projection dans le plan (P, v)"></svg><figcaption>Projection (P, v) : diagramme de Clapeyron</figcaption></figure>
+<figure><svg id="pvtPT" viewBox="0 0 320 240" role="img" aria-label="Projection dans le plan (P, T)"></svg><figcaption>Projection (P, T) : diagramme de phases</figcaption></figure>
+</div>
+<p class="desc" id="pvtDesc"></p>
+<div class="ctrl"><label for="pvtT">Isotherme</label><input type="range" id="pvtT" min="0.42" max="1.3" step="0.005" value="0.8"><span class="rd" id="pvtTv"></span></div>
+<div class="ctrl"><label for="pvtAz">Rotation</label><input type="range" id="pvtAz" min="-85" max="-5" step="1" value="-45"></div>
+</div>
+<div class="keep">
+<div><h3>Une surface, deux projections</h3><p>Le diagramme de Clapeyron est la surface vue le long de l'axe T, le diagramme (P, T) la vue le long de l'axe v. Une zone diphasée, faite de segments horizontaux, s'y écrase en une courbe.</p></div>
+<div><h3>Ligne triple, point triple</h3><p>Solide, liquide et vapeur coexistent à T et P fixées, mais avec trois volumes massiques différents : c'est une ligne sur la surface, qui devient un point dans le plan (P, T).</p></div>
+<div><h3>Au-dessus du point critique</h3><p>Au-delà de Tc, l'isotherme ne traverse plus aucun palier : on passe du « liquide » au « gaz » sans changement d'état.</p></div>
+<div><h3>Et l'eau ?</h3><p>Ce corps se contracte en se solidifiant (courbe de fusion de pente positive). L'eau fait l'inverse : sa courbe de fusion penche vers la gauche et la glace occupe plus de volume que le liquide.</p></div>
+</div>
+<p class="note">Schéma qualitatif : fluide décrit par l'équation de van der Waals en variables réduites (avec la construction de Maxwell), phase solide ajoutée à la main. v est en échelle logarithmique et P en échelle dilatée pour que toutes les zones restent lisibles.</p>
+</section>
+</main>
+<footer>Carnet d'animations · d'autres manips viendront s'ajouter ici</footer>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const C={x:180,y:330},r=28,L=170,xH=110,xC=250,head=50,pH=24,Th=600,Tc=300,Vd=40,Tr=(Th-Tc)/Math.log(Th/Tc);
+let phi=-Math.PI/2;
+const pin=a=>({x:C.x+r*Math.cos(a),y:C.y+r*Math.sin(a)});
+const pp=(p,xa)=>p.y-Math.sqrt(L*L-(p.x-xa)**2);
+const geo=t=>{const a=pin(t),b=pin(t+phi),yh=pp(a,xH),yc=pp(b,xC),Vh=yh-pH-head,Vc=yc-pH-head,m=Vh/Th+Vc/Tc+Vd/Tr;return{a,b,yh,yc,Vh,Vc,V:Vh+Vc+Vd,P:1/m,f:(Vh/Th)/m}};
+const N=360;let G=[];
+const build=()=>{G=[];for(let i=0;i<N;i++)G.push(geo(2*Math.PI*i/N))};
+build();
+let W=0;for(let i=0;i<N;i++){const a=G[i],b=G[(i+1)%N];W+=(a.P+b.P)/2*(b.V-a.V)}
+if(W<0){phi=Math.PI/2;build()}
+const Vs=G.map(g=>g.V),Ps=G.map(g=>g.P),Fs=G.map(g=>g.f);
+const vmn=Math.min(...Vs),vmx=Math.max(...Vs),pmn=Math.min(...Ps),pmx=Math.max(...Ps),fmn=Math.min(...Fs),fmx=Math.max(...Fs);
+const px=V=>55+(V-vmn)/(vmx-vmn)*220,py=P=>200-(P-pmn)/(pmx-pmn)*175;
+$("cyc").setAttribute("d",G.map((g,i)=>(i?"L":"M")+px(g.V).toFixed(1)+" "+py(g.P).toFixed(1)).join("")+"Z");
+const ph=G.map((g,i)=>{const b=G[(i+1)%N],c=G[(i+N-1)%N];const rv=(b.V-c.V)/(vmx-vmn),rf=(b.f-c.f)/(fmx-fmn);return Math.abs(rv)>Math.abs(rf)?(rv>0?1:3):(rf>0?0:2)});
+const NS="http://www.w3.org/2000/svg";
+[45,135,225,315].forEach(i=>{const a=G[i-2],b=G[i+2];const x=px(b.V),y=py(b.P);let dx=x-px(a.V),dy=y-py(a.P);const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const s=7;const p=document.createElementNS(NS,"polygon");p.setAttribute("points",[[x+dx*s,y+dy*s],[x-dy*s*.6,y+dx*s*.6],[x+dy*s*.6,y-dx*s*.6]].map(q=>q.join(",")).join(" "));$("arr").appendChild(p)});
+const desc=["Le gaz est chassé du cylindre froid vers le cylindre chaud à travers le régénérateur. Le volume total varie peu, la température moyenne monte, donc P monte.","Le gaz est surtout côté chaud, à haute pression : il pousse les pistons. C'est le temps moteur, la source chaude fournit la chaleur qui maintient T₂.","Le gaz est chassé vers le cylindre froid. Le volume total varie peu, la température moyenne baisse, donc P chute.","Le gaz est surtout côté froid, à basse pression. L'inertie du volant repousse les pistons : ce travail coûte moins que celui gagné à la détente."];
+const dots=[];for(let k=0;k<6;k++){const c=document.createElementNS(NS,"circle");c.setAttribute("r","2.5");c.setAttribute("fill","var(--ink)");$("flow").appendChild(c);dots.push(c)}
+const spokes=[...$("spokes").children],chips=[...document.querySelectorAll(".ph")];
+const set=(el,o)=>{for(const k in o)el.setAttribute(k,o[k])};
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let th=0.6,playing=!reduce,last=null,spd=0.25,lastK=-1;
+$("play").textContent=playing?"Pause":"Lecture";
+$("spd").addEventListener("input",e=>spd=+e.target.value);
+$("play").addEventListener("click",()=>{playing=!playing;$("play").textContent=playing?"Pause":"Lecture";$("play").setAttribute("aria-label",playing?"Pause":"Lecture")});
+const draw=()=>{const g=geo(th);const i=Math.round((((th%(2*Math.PI))+2*Math.PI)%(2*Math.PI))/(2*Math.PI)*N)%N;const k=ph[i];
+$("gasH").setAttribute("height",g.Vh);$("gasC").setAttribute("height",g.Vc);
+$("pisH").setAttribute("y",g.yh-pH);$("pisC").setAttribute("y",g.yc-pH);
+set($("ppH"),{cx:xH,cy:g.yh-4});set($("ppC"),{cx:xC,cy:g.yc-4});
+set($("rodH"),{x1:g.a.x,y1:g.a.y,x2:xH,y2:g.yh-4});set($("rodC"),{x1:g.b.x,y1:g.b.y,x2:xC,y2:g.yc-4});
+set($("armH"),{x2:g.a.x,y2:g.a.y});set($("armC"),{x2:g.b.x,y2:g.b.y});
+set($("pinH"),{cx:g.a.x,cy:g.a.y});set($("pinC"),{cx:g.b.x,cy:g.b.y});
+spokes.forEach((l,j)=>{const a=th+j*2*Math.PI/3;set(l,{x1:C.x,y1:C.y,x2:C.x+48*Math.cos(a),y2:C.y+48*Math.sin(a)})});
+const sh=-(g.f-fmn)/(fmx-fmn)*1.2;dots.forEach((d,j)=>{const u=((j/6+sh)%1+1)%1;set(d,{cx:(xH+u*(xC-xH)).toFixed(1),cy:30})});
+set($("dot"),{cx:px(g.V),cy:py(g.P),fill:k<2?"var(--hot)":"var(--cold)"});
+if(k!==lastK){chips.forEach(s=>s.classList.toggle("on",+s.dataset.k===k));$("desc").textContent=desc[k];lastK=k}
+const deg=Math.round(((th*180/Math.PI)%360+360)%360);
+$("vals").textContent="angle "+String(deg).padStart(3," ")+"°   gaz côté chaud "+String(Math.round(g.f*100)).padStart(3," ")+" %   P/Pmin "+(g.P/pmn).toFixed(2)};
+const loop=t=>{const dt=last?Math.min(0.05,(t-last)/1000):0;last=t;if(playing)th+=dt*spd*2*Math.PI;draw();requestAnimationFrame(loop)};
+requestAnimationFrame(loop);
+const links=[...document.querySelectorAll(".idx a")];
+const route=()=>{const h=location.hash.slice(1)||"stirling-alpha";links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+h))};
+addEventListener("hashchange",route);route();
+}
+</script>
+<script>
+{
+const $=id=>document.getElementById(id);
+const tmin=0.42,tmax=1.3,tt=0.6,pmax=1.6,vmin=0.3,vmax=40,LV=Math.log(vmax/vmin);
+const pw=(v,t)=>8*t/(3*v-1)-3/(v*v);
+const bis=(f,a,b,n)=>{let fa=f(a);for(let i=0;i<(n||70);i++){const m=(a+b)/2,fm=f(m);if((fm>0)===(fa>0)){a=m;fa=fm}else b=m}return(a+b)/2};
+const hh=v=>(3*v-1)**2/(4*v**3);
+const spn=t=>[bis(v=>hh(v)-t,1/3+1e-9,1),Math.exp(bis(x=>hh(Math.exp(x))-t,0,Math.log(1e6)))];
+const lo3=Math.log(1/3+1e-9),hi7=Math.log(1e7);
+const rootV=(t,p,side,S)=>{let a=lo3,b=hi7;if(t<1){S=S||spn(t);if(side==="L")b=Math.log(S[0]);else a=Math.log(S[1])}return Math.exp(bis(x=>pw(Math.exp(x),t)-p,a,b))};
+const SC=new Map();
+const sat=t=>{if(t>=1)return{p:1,vl:1,vv:1};const k=t.toFixed(5);if(SC.has(k))return SC.get(k);const S=spn(t),lo=Math.max(pw(S[0],t),1e-7),hi=pw(S[1],t);const F=p=>{const a=rootV(t,p,"L",S),b=rootV(t,p,"V",S);return 8*t/3*Math.log((3*b-1)/(3*a-1))+3/b-3/a-p*(b-a)};const p=bis(F,lo,hi,50),r={p,vl:rootV(t,p,"L",S),vv:rootV(t,p,"V",S)};SC.set(k,r);return r};
+const ud=v=>Math.min(1,Math.max(0,Math.log(v/vmin)/LV)),vinv=u=>vmin*Math.exp(u*LV),pd=p=>Math.sqrt(Math.min(Math.max(p,0),pmax)/pmax);
+const T0=sat(tt),pt=T0.p,vLt=T0.vl,vVt=T0.vv,tx=tt+(pmax-pt)/15;
+const vS=t=>0.36*(1+0.03*(t-tt)),psub=t=>pt*Math.exp(6*(1/tt-1/t)),pfus=t=>pt+15*(t-tt),vSub=t=>rootV(t,psub(t),"V");
+const rng=(a,b,n)=>Array.from({length:n+1},(_,i)=>a+(b-a)*i/n);
+const rep=(q,n)=>Array.from({length:n+1},()=>[q[0],q[1]]);
+const line=(v0,v1,t,n)=>rng(ud(v0),ud(v1),n).map(u=>[u,Math.min(pmax,pw(vinv(u),t))]);
+const solid=(t,pl)=>{const vs=vS(t);return rng(0,ud(vs),4).map(u=>[u,Math.min(pmax,pl+40*(vs-vinv(u)))])};
+const NL=12,NV=24;
+const iso=t=>{const us=ud(vS(t));
+if(t<tt){const pl=psub(t),vV=rootV(t,pl,"V"),uL=ud(vLt);return[solid(t,pl),[[us,pl],[uL,pl]],rep([uL,pl],NL),[[uL,pl],[ud(vV),pl]],vV<vmax?line(vV,vmax,t,NV):rep([1,pl],NV)]}
+if(t<0.9995){const s=sat(t),pf=pfus(t);let A,B,L;
+if(pf<pmax){const vf=rootV(t,pf,"L");A=solid(t,pf);B=[[us,pf],[ud(vf),pf]];L=line(vf,s.vl,t,NL)}
+else{const v0=rootV(t,pmax,"L"),q=[ud(v0),pmax];A=rep(q,4);B=rep(q,1);L=line(v0,s.vl,t,NL)}
+return[A,B,L,[[ud(s.vl),s.p],[ud(s.vv),s.p]],line(s.vv,vmax,t,NV)]}
+const v0=rootV(t,pmax,"L"),vc=Math.max(v0,1),q=[ud(v0),pmax],c=[ud(vc),Math.min(pmax,pw(vc,t))];
+return[rep(q,4),rep(q,1),line(v0,vc,t,NL),rep(c,1),line(vc,vmax,t,NV)]};
+const K=[tt,tx,1],TS=K.concat(rng(tmin,tmax,46).filter(t=>K.every(k=>Math.abs(k-t)>0.008))).sort((a,b)=>a-b);
+const W3=(u,t,p)=>[u-0.5,(t-tmin)/(tmax-tmin)-0.5,pd(p)*0.8];
+const ISO=TS.map(t=>({t,s:iso(t).map(g=>g.map(q=>W3(q[0],t,q[1])))}));
+ISO.forEach((o,i)=>{o.g=i%3===0||o.t===tt||o.t===1});
+const tV=rng(tt,0.999,40).concat([1]),tS=rng(tmin,tt,30),tF=rng(tt,tx,12);
+const CURV=[tV.map(t=>{const s=sat(t);return W3(ud(s.vl),t,s.p)}),tV.map(t=>{const s=sat(t);return W3(ud(s.vv),t,s.p)}),tS.map(t=>W3(ud(vSub(t)),t,psub(t))),tS.map(t=>W3(ud(vS(t)),t,psub(t))),tF.map(t=>W3(ud(vS(t)),t,pfus(t))),tF.map(t=>W3(ud(rootV(t,pfus(t),"L")),t,pfus(t)))];
+const TRI=[W3(ud(vS(tt)),tt,pt),W3(ud(vVt),tt,pt)],CRIT=W3(ud(1),1,1);
+const Lt=(()=>{const v=[-0.35,-0.55,0.75],n=Math.hypot(...v);return v.map(x=>x/n)})();
+const nrm=w=>{const a=[w[2][0]-w[0][0],w[2][1]-w[0][1],w[2][2]-w[0][2]],b=[w[3][0]-w[1][0],w[3][1]-w[1][1],w[3][2]-w[1][2]];const n=[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],l=Math.hypot(...n)||1;return n.map(x=>x/l)};
+const QU=[];for(let i=0;i<ISO.length-1;i++){const A=ISO[i].s,B=ISO[i+1].s;for(let k=0;k<5;k++)for(let j=0;j<A[k].length-1;j++){const w=[A[k][j],A[k][j+1],B[k][j+1],B[k][j]],n=nrm(w);QU.push({w,k:k===1||k===3?2:k===0?1:0,lam:Math.abs(n[0]*Lt[0]+n[1]*Lt[1]+n[2]*Lt[2])})}}
+const vs5=vS(0.5),us5=ud(vs5)/2;
+const LB=[["Solide",W3(us5,0.5,Math.min(pmax,psub(0.5)+40*(vs5-vinv(us5)))),0],["Liquide",W3(ud(rootV(0.88,1.25,"L")),0.88,1.25),0],["Liquide–vapeur",W3(0.38,0.78,sat(0.78).p),0],["Vapeur",W3(0.84,0.78,pw(vinv(0.84),0.78)),0],["Gaz",W3(0.8,1.2,pw(vinv(0.8),1.2)),0],["Solide–vapeur",W3(0.55,0.5,psub(0.5)),0],["Ligne triple",W3(0.62,tt,pt),-11],["Point critique",CRIT,-6,50]];
+const AX=[[[-0.5,-0.57,0],[0.6,-0.57,0],"v"],[[0.57,-0.5,0],[0.57,0.6,0],"T"],[[-0.57,-0.57,0],[-0.57,-0.57,0.85],"P"]];
+const cv=$("pvt3d"),cx=cv.getContext("2d"),wrap=$("pvtWrap");
+const probe=document.createElement("span");probe.style.display="none";document.body.appendChild(probe);
+const col=n=>{probe.style.color="var(--"+n+")";return(getComputedStyle(probe).color.match(/[\d.]+/g)||[0,0,0]).slice(0,3).map(Number)};
+const mix=(a,b,w)=>a.map((x,i)=>x+(b[i]-x)*w),rgb=c=>"rgb("+c.map(x=>Math.round(x)).join(",")+")";
+let C={};
+const theme=()=>{const P=col("panel"),I=col("ink");C={P,I,M:col("mute"),hot:col("hot"),acc:col("acc"),base:[mix(P,I,0.1),mix(P,I,0.24),mix(P,col("cold"),0.42)],grid:mix(P,I,0.38)}};
+let az=-Math.PI/4,el=0.55,tsel=0.8,SEL=[],pend=false;
+const render3=()=>{const r=wrap.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),Wd=Math.max(1,r.width),Hd=Math.max(1,r.height);
+if(cv.width!==Math.round(Wd*dpr)||cv.height!==Math.round(Hd*dpr)){cv.width=Math.round(Wd*dpr);cv.height=Math.round(Hd*dpr)}
+cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,Wd,Hd);
+const ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el);
+const pr=w=>{const x1=w[0]*ca-w[1]*sa,y1=w[0]*sa+w[1]*ca;return[x1,-(w[2]*ce+y1*se),y1*ce-w[2]*se]};
+let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+for(const X of[-0.57,0.6])for(const Y of[-0.57,0.6])for(const Z of[0,0.85]){const q=pr([X,Y,Z]);x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1])}
+const m=20,s=Math.min((Wd-2*m)/(x1-x0),(Hd-2*m)/(y1-y0)),ox=Wd/2-s*(x0+x1)/2,oy=Hd/2-s*(y0+y1)/2;
+const P=w=>{const q=pr(w);return[ox+s*q[0],oy+s*q[1],q[2]]};
+cx.strokeStyle=rgb(C.M);cx.lineWidth=1;
+for(const a of AX){const p=P(a[0]),q=P(a[1]);cx.beginPath();cx.moveTo(p[0],p[1]);cx.lineTo(q[0],q[1]);cx.stroke()}
+const prim=[];
+for(const o of QU){const p=o.w.map(P);const ar=Math.abs((p[2][0]-p[0][0])*(p[3][1]-p[1][1])-(p[3][0]-p[1][0])*(p[2][1]-p[0][1]));if(ar<0.02)continue;prim.push({d:(p[0][2]+p[1][2]+p[2][2]+p[3][2])/4,p,c:rgb(C.base[o.k].map(x=>x*(0.74+0.26*o.lam)))})}
+const seg=(a,b,c,lw,bias)=>{const p=P(a),q=P(b);if(Math.hypot(p[0]-q[0],p[1]-q[1])<0.3)return;prim.push({d:(p[2]+q[2])/2-bias,l:[p,q],c,lw})};
+const poly=(arr,c,lw,bias)=>{for(let j=0;j<arr.length-1;j++)seg(arr[j],arr[j+1],c,lw,bias)};
+const gc=rgb(C.grid),ic=rgb(C.I);
+ISO.forEach(o=>{if(o.g)poly(o.s.flat(),gc,0.7,0.004)});
+CURV.forEach(a=>poly(a,ic,1.3,0.006));
+seg(TRI[0],TRI[1],rgb(C.hot),3.2,0.012);
+poly(SEL,rgb(C.acc),2.6,0.015);
+prim.sort((a,b)=>b.d-a.d);
+for(const q of prim){cx.beginPath();if(q.p){cx.moveTo(q.p[0][0],q.p[0][1]);for(let k=1;k<4;k++)cx.lineTo(q.p[k][0],q.p[k][1]);cx.closePath();cx.fillStyle=q.c;cx.fill();cx.strokeStyle=q.c;cx.lineWidth=0.7;cx.stroke()}else{cx.moveTo(q.l[0][0],q.l[0][1]);cx.lineTo(q.l[1][0],q.l[1][1]);cx.strokeStyle=q.c;cx.lineWidth=q.lw;cx.lineCap="round";cx.stroke()}}
+const cp=P(CRIT);cx.beginPath();cx.arc(cp[0],cp[1],4.5,0,2*Math.PI);cx.fillStyle=ic;cx.fill();cx.lineWidth=1.5;cx.strokeStyle=rgb(C.P);cx.stroke();
+cx.textAlign="center";cx.textBaseline="middle";cx.lineJoin="round";
+const lab=(t,x,y)=>{cx.lineWidth=4;cx.strokeStyle=rgb(C.P);cx.strokeText(t,x,y);cx.fillStyle=ic;cx.fillText(t,x,y)};
+cx.font="500 12px 'Red Hat Text',system-ui,sans-serif";
+for(const b of LB){const p=P(b[1]);lab(b[0],p[0]+(b[3]||0),p[1]+b[2])}
+cx.font="500 14px 'Red Hat Display',system-ui,sans-serif";
+for(const a of AX){const p=P(a[0]),q=P(a[1]),dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy)||1;lab(a[2],q[0]+dx/l*12,q[1]+dy/l*12)}};
+const req=()=>{if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;render3()})};
+const X=u=>36+u*272,Yp=d=>210-d*196,XT=t=>36+(t-tmin)/(tmax-tmin)*272,f1=n=>n.toFixed(1);
+const pth=a=>a.map((q,i)=>(i?"L":"M")+f1(q[0])+" "+f1(q[1])).join("");
+const pol=a=>a.map(q=>f1(q[0])+","+f1(q[1])).join(" ");
+const isoPV=t=>pth(iso(t).flat().map(q=>[X(q[0]),Yp(pd(q[1]))]));
+const txt=(x,y,s,o)=>{o=o||{};return`<text class="lab" x="${f1(x)}" y="${f1(y)}" font-size="${o.fs||11}" text-anchor="${o.a||"middle"}"${o.tr?` dy="0.35em" transform="rotate(-90 ${f1(x)} ${f1(y)})"`:""}>${s}</text>`};
+const usT=ud(vS(tt)),ytp=Yp(pd(pt)),C2=[X(ud(1)),Yp(pd(1))];
+const dome=tV.map(t=>{const s=sat(t);return[X(ud(s.vl)),Yp(pd(s.p))]}).concat(tV.slice().reverse().map(t=>{const s=sat(t);return[X(ud(s.vv)),Yp(pd(s.p))]}));
+const sv=[[X(usT),ytp]].concat(tS.slice().reverse().map(t=>[X(ud(vSub(t))),Yp(pd(psub(t)))]),[[X(ud(vS(tmin))),Yp(pd(psub(tmin)))]]);
+const sl=tF.map(t=>[X(ud(vS(t))),Yp(pd(pfus(t)))]).concat(tF.slice().reverse().map(t=>[X(ud(rootV(t,pfus(t),"L"))),Yp(pd(pfus(t)))]));
+const isos=[0.5,tt,0.7,0.8,0.9,1.15,1.3].map(t=>`<path d="${isoPV(t)}" fill="none" stroke="var(--mute)" stroke-width="0.8" opacity="0.7"/>`).join("");
+$("pvtPV").innerHTML=`<polygon points="${pol(sv)}" fill="var(--cold)" fill-opacity="0.16"/><polygon points="${pol(dome)}" fill="var(--cold)" fill-opacity="0.26"/><polygon points="${pol(sl)}" fill="var(--cold)" fill-opacity="0.26"/>${isos}<path d="${isoPV(1)}" fill="none" stroke="var(--ink)" stroke-width="0.9" stroke-dasharray="4 3"/><path d="M36 6V210H314" fill="none" stroke="var(--mute)"/><line x1="${f1(X(usT))}" y1="${f1(ytp)}" x2="${f1(X(ud(vVt)))}" y2="${f1(ytp)}" stroke="var(--hot)" stroke-width="2.5"/><path id="pvSel" fill="none" stroke="var(--acc)" stroke-width="2"/><circle cx="${f1(C2[0])}" cy="${f1(C2[1])}" r="4" fill="var(--ink)" stroke="var(--panel)" stroke-width="1.5"/>`
++txt(X(usT/2),Yp(0.35),"Solide",{fs:10,tr:1})+txt(X((usT+ud(vLt))/2),Yp(0.7),"Solide–liquide",{fs:10,tr:1})+txt(X(0.085),Yp(0.93),"Liquide",{a:"start"})+txt(X(0.4),Yp(0.42),"Liquide–vapeur")+txt(X(0.6),ytp-6,"Ligne triple",{fs:10})+txt(X(0.45),Yp(0.1),"Solide–vapeur")+txt(X(0.88),Yp(0.215),"Vapeur",{fs:10,a:"start"})+txt(X(0.72),Yp(0.55),"Gaz")+txt(C2[0]+7,C2[1]-8,"Point critique",{fs:10,a:"start"})+txt(30,14,"P",{a:"end"})+txt(314,228,"v (échelle log)",{fs:10,a:"end"});
+const sub=tS.map(t=>[XT(t),Yp(pd(psub(t)))]),vap=tV.map(t=>[XT(t),Yp(pd(sat(t).p))]),fus=tF.map(t=>[XT(t),Yp(pd(pfus(t)))]);
+$("pvtPT").innerHTML=`<path d="M36 6V210H314" fill="none" stroke="var(--mute)"/><path d="${pth(sub)}" fill="none" stroke="var(--ink)" stroke-width="1.6"/><path d="${pth(vap)}" fill="none" stroke="var(--ink)" stroke-width="1.6"/><path d="${pth(fus)}" fill="none" stroke="var(--ink)" stroke-width="1.6"/><line id="ptSel" y1="6" y2="210" stroke="var(--acc)" stroke-width="1.8" stroke-dasharray="5 4"/><circle cx="${f1(XT(tt))}" cy="${f1(ytp)}" r="4.5" fill="var(--hot)" stroke="var(--panel)" stroke-width="1.5"/><circle cx="${f1(XT(1))}" cy="${f1(C2[1])}" r="4" fill="var(--ink)" stroke="var(--panel)" stroke-width="1.5"/>`
++txt(XT(0.5),Yp(0.6),"Solide")+txt(XT(0.82),Yp(0.75),"Liquide")+txt(XT(0.92),Yp(0.3),"Vapeur")+txt(XT(1.12),Yp(0.92),"Fluide supercritique",{fs:10})+txt(XT(1.18),Yp(0.4),"Gaz")+txt(XT(tt)+8,ytp+15,"Point triple",{fs:10,a:"start"})+txt(XT(1)+8,C2[1]+4,"Point critique",{fs:10,a:"start"})+txt(30,14,"P",{a:"end"})+txt(314,228,"T",{a:"end"});
+const seq=t=>t<tt-0.004?"Sous la température du point triple, le liquide n'existe pas. En augmentant v : solide → solide + vapeur (sublimation) → vapeur.":t<=tt+0.004?"Isotherme du point triple : son palier est la ligne triple, où solide, liquide et vapeur coexistent.":t<tx?"En augmentant v : solide → solide + liquide → liquide → liquide + vapeur → vapeur.":t<0.995?"En augmentant v : liquide → liquide + vapeur → vapeur. Le solide n'apparaît qu'à des pressions hors du cadre.":t<=1.005?"Isotherme critique : le palier se réduit au point critique, où liquide et vapeur deviennent identiques.":"Au-dessus de Tc : plus aucun palier, on passe continûment du « liquide » au « gaz » sans changement d'état.";
+const tR=$("pvtT"),azR=$("pvtAz");
+const upd=()=>{tsel=+tR.value;$("pvtTv").textContent="T/Tc = "+tsel.toFixed(2).replace(".",",");$("pvSel").setAttribute("d",isoPV(tsel));const x=f1(XT(tsel));$("ptSel").setAttribute("x1",x);$("ptSel").setAttribute("x2",x);$("pvtDesc").textContent=seq(tsel);SEL=iso(tsel).flat().map(q=>W3(q[0],tsel,q[1]));req()};
+tR.addEventListener("input",upd);
+azR.addEventListener("input",()=>{az=azR.value*Math.PI/180;req()});
+let drag=null;
+wrap.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,az,el};try{wrap.setPointerCapture(e.pointerId)}catch(_){}});
+wrap.addEventListener("pointermove",e=>{if(!drag)return;az=drag.az+(e.clientX-drag.x)*0.008;el=Math.min(1.15,Math.max(0.2,drag.el+(e.clientY-drag.y)*0.005));azR.value=Math.round(Math.max(-85,Math.min(-5,az*180/Math.PI)));req()});
+const endDrag=()=>{drag=null};wrap.addEventListener("pointerup",endDrag);wrap.addEventListener("pointercancel",endDrag);
+const ro3=new ResizeObserver(req);ro3.observe(wrap);
+const mo3=new MutationObserver(()=>{theme();req()});mo3.observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{theme();req()});
+theme();upd();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(req);
+}
+</script>
+</body>
+</html>
